@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "100%",
     backgroundColor: "#fff",
+    paddingVertical: 9,
   },
   disabledContainer: {
     opacity: 0.32,

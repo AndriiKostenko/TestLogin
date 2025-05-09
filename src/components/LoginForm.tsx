@@ -1,7 +1,21 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+} from "react-native";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { authService } from "../services/auth.service";
+import { useAuth } from "../context/AuthContext";
+import { LoginResponse } from "../types";
 import { useForm, Controller } from "react-hook-form";
+import { RootStackParamList } from "../navigation/AppNavigator";
+import { NavigationRoutes } from "../enums/navigation.enum";
+import { GradientButton } from "../ui";
+const closeIcon = require("../assets/images/icons/close.png");
 
 interface FormData {
   username: string;
@@ -10,7 +24,9 @@ interface FormData {
 
 const LoginForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+
+  const { login } = useAuth();
 
   const {
     control,
@@ -21,7 +37,21 @@ const LoginForm: React.FC = () => {
   const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleLogin = async (data: FormData) => {
-    
+    try {
+      const userData: LoginResponse = await authService.login(
+        data.username,
+        data.password
+      );
+      console.log("User data:", userData);
+      login(userData);
+      navigation.navigate(NavigationRoutes.PROFILE);
+    } catch (e) {
+      if (e instanceof Error) {
+        setError(e.message || "Login failed");
+      } else {
+        setError("Login failed");
+      }
+    }
   };
 
   return (
@@ -35,25 +65,35 @@ const LoginForm: React.FC = () => {
             required: "Username is required",
           }}
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={[styles.input, usernameFocused && styles.inputFocused]}
-              placeholder={usernameFocused ? undefined : "Username"}
-              onBlur={() => {
-                onBlur();
-                setUsernameFocused(false);
-              }}
-              onFocus={() => setUsernameFocused(true)}
-              onChangeText={onChange}
-              value={value}
-              placeholderTextColor={"#879399"}
-            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.input, usernameFocused && styles.inputFocused]}
+                placeholder={usernameFocused ? undefined : "Username"}
+                onBlur={() => {
+                  onBlur();
+                  setUsernameFocused(false);
+                }}
+                onFocus={() => setUsernameFocused(true)}
+                onChangeText={onChange}
+                value={value}
+                placeholderTextColor={"#879399"}
+              />
+              {value ? (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={() => onChange("")}
+                >
+                  <Image source={closeIcon} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
           )}
           name="username"
         />
-        {errors.username && (
-          <Text style={styles.error}>{errors.username.message}</Text>
-        )}
       </View>
+      {errors.username && (
+        <Text style={styles.error}>{errors.username.message}</Text>
+      )}
 
       <View>
         {passwordFocused && <Text style={styles.label}>Password</Text>}
@@ -67,19 +107,30 @@ const LoginForm: React.FC = () => {
             },
           }}
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              style={[styles.input, passwordFocused && styles.inputFocused]}
-              placeholder={passwordFocused ? undefined : "Password"}
-              secureTextEntry
-              onBlur={() => {
-                onBlur();
-                setPasswordFocused(false);
-              }}
-              onFocus={() => setPasswordFocused(true)}
-              onChangeText={onChange}
-              value={value}
-              placeholderTextColor={"#879399"}
-            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.input, passwordFocused && styles.inputFocused]}
+                placeholder={passwordFocused ? undefined : "Password"}
+                secureTextEntry
+                onBlur={() => {
+                  onBlur();
+                  setPasswordFocused(false);
+                }}
+                onFocus={() => setPasswordFocused(true)}
+                onChangeText={onChange}
+                value={value}
+                placeholderTextColor={"#879399"}
+              />
+
+              {value ? (
+                <TouchableOpacity
+                  style={styles.clearButton}
+                  onPress={() => onChange("")}
+                >
+                  <Image source={closeIcon} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
           )}
           name="password"
         />
@@ -88,7 +139,8 @@ const LoginForm: React.FC = () => {
         )}
       </View>
 
-      <Button title="Login" onPress={handleSubmit(handleLogin)} />
+      <GradientButton onPress={handleSubmit(handleLogin)} label="Login"/>
+
     </View>
   );
 };
@@ -107,6 +159,10 @@ const styles = StyleSheet.create({
     left: 16,
     position: "absolute",
   },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   input: {
     height: 53,
     borderColor: "#D8E2E6",
@@ -115,12 +171,17 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     width: "100%",
+    color: "#000",
   },
   inputFocused: {
     borderColor: "#338BFF",
     borderWidth: 1,
     paddingBottom: 6,
-    // marginBottom: 12,
+  },
+  clearButton: {
+    position: "absolute",
+    right: 16,
+    top: 18,
   },
   error: {
     color: "red",

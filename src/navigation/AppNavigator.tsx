@@ -22,7 +22,18 @@ const AppNavigator: React.FC = () => {
     >
       <Stack.Screen name={NavigationRoutes.HOME} component={HomeScreen} />
       <Stack.Screen name={NavigationRoutes.LOGIN} component={LoginScreen} />
-      <Stack.Screen name={NavigationRoutes.PROFILE} component={ProfileScreen} />
+      <Stack.Screen
+        name={NavigationRoutes.PROFILE}
+        component={ProfileScreen}
+        options={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: "#F5F8FA",
+          },
+          headerShadowVisible: false,
+          headerTintColor: "#000",
+        }}
+      />
     </Stack.Navigator>
   );
 };
